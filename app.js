@@ -52,6 +52,7 @@ const TIPOS_ITEM = ['Tarea', 'Prueba', 'Examen', 'Proyecto'];
 const TIPOS_CON_ENTREGA = ['Tarea', 'Proyecto'];
 const ESTADOS_ASISTENCIA = ['Presente', 'Tarde', 'Ausente', 'Justificado'];
 
+window.__tgtIniciada = true;   // avisa a boot-check.js que la app sí arrancó
 hydrateIcons();
 
 const firebaseApp = initializeApp(CONFIG.firebase);
@@ -279,7 +280,10 @@ const MSG = {
     BAD_RESPONSE: 'No pudimos confirmar si la operación se completó. Revisa la información actualizada antes de intentarlo de nuevo.',
 };
 
-async function api(action, payload = {}, { forceRefresh = false } = {}) {
+// Acciones de solo lectura: es seguro reintentarlas si la respuesta llega incompleta.
+const READ_ACTIONS = new Set(['getSnapshot', 'getEntregaFile', 'verifyAudit']);
+
+async function api(action, payload = {}, { forceRefresh = false, retried = false } = {}) {
     if (CONFIG.API_URL.includes('REEMPLAZA')) {
         console.error('[TutoríasGT] CONFIG.API_URL no está configurada en app.js');
         throw new ApiError('CONFIG', MSG.CONFIG);
@@ -303,6 +307,12 @@ async function api(action, payload = {}, { forceRefresh = false } = {}) {
     let json;
     try { json = JSON.parse(text); } catch {
         console.error(`[TutoríasGT] Respuesta no válida del backend (${action}) · HTTP ${res.status} ${res.url}\n`, text.slice(0, 1500));
+        throw new ApiError('BAD_RESPONSE', MSG.BAD_RESPONSE);
+    }
+    // Respuesta "ok" pero sin datos: no es la respuesta de la acción pedida.
+    if (json.ok && !Object.prototype.hasOwnProperty.call(json, 'data')) {
+        console.error(`[TutoríasGT] Respuesta incompleta del backend (${action}) · HTTP ${res.status} ${res.url}\n`, text.slice(0, 500));
+        if (!retried && READ_ACTIONS.has(action)) return api(action, payload, { forceRefresh, retried: true });
         throw new ApiError('BAD_RESPONSE', MSG.BAD_RESPONSE);
     }
     if (!json.ok) {
@@ -2085,7 +2095,10 @@ async function bootSession(forceRefresh = false) {
                 `<button class="btn btn-primary btn-block" data-action="resend-verification">Enviar correo de verificación</button>
                  <button class="btn btn-ghost btn-block" data-action="retry-session">Ya verifiqué</button>`);
         } else {
-            showDenied('No se pudo conectar', e.message, '<button class="btn btn-primary btn-block" data-action="retry-session">Reintentar</button>');
+            // Solo se muestran mensajes propios; un error técnico (TypeError, etc.) va a la consola.
+            if (!(e instanceof ApiError)) console.error('[TutoríasGT] Error al cargar la sesión:', e);
+            showDenied('No se pudo conectar', e instanceof ApiError ? e.message : MSG.BAD_RESPONSE,
+                '<button class="btn btn-primary btn-block" data-action="retry-session">Reintentar</button>');
         }
     }
 }
