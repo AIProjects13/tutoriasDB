@@ -13,6 +13,7 @@ import {
     initializeAuth, browserSessionPersistence, onAuthStateChanged, signInWithEmailAndPassword,
     signOut, sendPasswordResetEmail, sendEmailVerification, updatePassword,
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { ico, hydrateIcons } from './icons.js';
 
 // ==========================================================================
 // 1. CONFIGURACIÓN
@@ -50,6 +51,8 @@ const ROLE_LABEL = { ADMIN: 'Administrador', TUTOR: 'Tutor', ESTUDIANTE: 'Estudi
 const TIPOS_ITEM = ['Tarea', 'Prueba', 'Examen', 'Proyecto'];
 const TIPOS_CON_ENTREGA = ['Tarea', 'Proyecto'];
 const ESTADOS_ASISTENCIA = ['Presente', 'Tarde', 'Ausente', 'Justificado'];
+
+hydrateIcons();
 
 const firebaseApp = initializeApp(CONFIG.firebase);
 // Sesión por pestaña: al cerrar el navegador se cierra la sesión (equipos compartidos).
@@ -220,23 +223,23 @@ function person(u, sub) {
 
 const gradePill = (v) => `<span class="grade-pill ${gradeClass(v)}">${fmtNota(v)}</span>`;
 const tipoBadge = (t) => `<span class="badge tipo-${esc(t)}">${esc(t)}</span>`;
-const ROLE_BADGE = { ADMIN: 'badge-danger', TUTOR: 'badge-brand', PADRE: 'badge-info', ESTUDIANTE: 'badge-success' };
+const ROLE_BADGE = { ADMIN: 'badge-solid', TUTOR: 'badge-brand', PADRE: 'badge-info', ESTUDIANTE: 'badge-success' };
 const roleBadge = (r) => `<span class="badge ${ROLE_BADGE[r] || ''}">${esc(ROLE_LABEL[r] || r)}</span>`;
 const bar = (v) => `<div class="bar ${gradeClass(v)}"><span style="width:${Math.max(0, Math.min(100, v ?? 0))}%"></span></div>`;
 
 function sumBadge(sum, label = 'Suma') {
     const ok = Math.abs(sum - 100) < 0.01;
-    const txt = ok ? `${label} 100% ✓` : `${label} ${fmtPeso(sum)} · ${sum < 100 ? 'faltan' : 'sobran'} ${fmtPeso(Math.abs(100 - sum))}`;
+    const txt = ok ? `${label} 100% ${ico('check', 'icon-xs')}` : `${label} ${fmtPeso(sum)} · ${sum < 100 ? 'faltan' : 'sobran'} ${fmtPeso(Math.abs(100 - sum))}`;
     return `<span class="badge ${ok ? 'badge-success' : 'badge-warn'}">${txt}</span>`;
 }
 
-function emptyState(msg, icon = '📭', actionHtml = '') {
-    return `<div class="empty"><div class="empty-icon" aria-hidden="true">${icon}</div><p>${esc(msg)}</p>${actionHtml}</div>`;
+function emptyState(msg, icon = 'inbox', actionHtml = '') {
+    return `<div class="empty"><div class="empty-icon">${ico(icon)}</div><p>${esc(msg)}</p>${actionHtml}</div>`;
 }
 
 function kpi(label, value, sub = '', icon = '', cls = '') {
     return `<div class="card kpi">
-        ${icon ? `<div class="kpi-icon" aria-hidden="true">${icon}</div>` : ''}
+        ${icon ? `<div class="kpi-icon">${ico(icon)}</div>` : ''}
         <span class="kpi-label">${esc(label)}</span>
         <span class="kpi-value ${cls}">${value}</span>
         ${sub ? `<span class="kpi-sub">${esc(sub)}</span>` : ''}
@@ -248,7 +251,7 @@ function options(list, selected) {
 }
 
 /** Botón de descarga de una entrega (el archivo vive en Drive privado y pasa por la API). */
-function entregaBtn(ent, label = '📎 Ver archivo', cls = 'btn btn-ghost btn-sm') {
+function entregaBtn(ent, label = `${ico('paperclip')} Ver archivo`, cls = 'btn btn-ghost btn-sm') {
     if (!ent?.TieneArchivo) return '';
     return `<button type="button" class="${cls}" data-action="download-entrega" data-id="${esc(ent.EntregaID)}"
         title="${esc(ent.ArchivoNombre || 'Descargar entrega')}">${label}</button>`;
@@ -257,7 +260,7 @@ function entregaBtn(ent, label = '📎 Ver archivo', cls = 'btn btn-ghost btn-sm
 function itemLink(item) {
     const url = safeUrl(item.EnlaceURL);
     return url
-        ? `<a class="item-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(item.Titulo)} <span aria-hidden="true">↗</span></a>`
+        ? `<a class="item-link" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(item.Titulo)} ${ico('arrow-up-right', 'icon-xs')}</a>`
         : `<span class="item-title">${esc(item.Titulo)}</span>`;
 }
 
@@ -425,20 +428,20 @@ function attendanceStats(estId, cursoId = null) {
 
 const NAV = {
     ADMIN: [
-        ['dashboard', 'Resumen', '📊'], ['usuarios', 'Usuarios', '👥'], ['cursos', 'Cursos', '📚'],
-        ['calificaciones', 'Calificaciones', '📝'], ['asistencia', 'Asistencia', '🗓️'],
-        ['auditoria', 'Auditoría', '🧾'], ['perfil', 'Mi perfil', '👤'],
+        ['dashboard', 'Resumen', 'layout-dashboard'], ['usuarios', 'Usuarios', 'users'], ['cursos', 'Cursos', 'book-open'],
+        ['calificaciones', 'Calificaciones', 'clipboard-list'], ['asistencia', 'Asistencia', 'calendar-check'],
+        ['auditoria', 'Auditoría', 'history'], ['perfil', 'Mi perfil', 'circle-user'],
     ],
     TUTOR: [
-        ['dashboard', 'Resumen', '📊'], ['cursos', 'Mis cursos', '📚'], ['usuarios', 'Mis estudiantes', '🎓'],
-        ['calificaciones', 'Calificaciones', '📝'], ['asistencia', 'Asistencia', '🗓️'],
-        ['auditoria', 'Bitácora', '🧾'], ['perfil', 'Mi perfil', '👤'],
+        ['dashboard', 'Resumen', 'layout-dashboard'], ['cursos', 'Mis cursos', 'book-open'], ['usuarios', 'Mis estudiantes', 'graduation-cap'],
+        ['calificaciones', 'Calificaciones', 'clipboard-list'], ['asistencia', 'Asistencia', 'calendar-check'],
+        ['auditoria', 'Bitácora', 'history'], ['perfil', 'Mi perfil', 'circle-user'],
     ],
     ESTUDIANTE: [
-        ['inicio', 'Inicio', '🏠'], ['mis-cursos', 'Mis cursos', '📚'],
-        ['mi-asistencia', 'Asistencia', '🗓️'], ['perfil', 'Mi perfil', '👤'],
+        ['inicio', 'Inicio', 'house'], ['mis-cursos', 'Mis cursos', 'book-open'],
+        ['mi-asistencia', 'Asistencia', 'calendar-check'], ['perfil', 'Mi perfil', 'circle-user'],
     ],
-    PADRE: [['progreso', 'Progreso', '📈']],
+    PADRE: [['progreso', 'Progreso', 'trending-up']],
 };
 const HOME = { ADMIN: 'dashboard', TUTOR: 'dashboard', ESTUDIANTE: 'inicio', PADRE: 'progreso' };
 
@@ -516,7 +519,7 @@ function render() {
 function renderChrome() {
     const me = state.me;
     $('#nav').innerHTML = NAV[me.Rol].map(([v, label, icon]) =>
-        `<a class="nav-link" href="#/${v}" data-view="${v}"><span class="nav-icon" aria-hidden="true">${icon}</span>${esc(label)}</a>`).join('');
+        `<a class="nav-link" href="#/${v}" data-view="${v}"><span class="nav-icon">${ico(icon)}</span>${esc(label)}</a>`).join('');
     $('#user-chip').innerHTML = `${avatar(me)}<div><strong>${esc(me.Nombre)}</strong>${roleBadge(me.Rol)}</div>`;
 }
 
@@ -585,10 +588,10 @@ function viewTutorDashboard() {
 
     return `
     <div class="grid grid-kpi">
-        ${kpi(admin ? 'Estudiantes' : 'Mis estudiantes', est.length, admin ? `${padres.length} padres · ${tutores.length} tutores` : '', '🎓')}
-        ${kpi(admin ? 'Cursos activos' : 'Mis cursos', cursos.length, `${nItems} evaluaciones`, '📚')}
-        ${kpi('Por calificar', porCalificar.length, 'Entregas sin nota', '📥', porCalificar.length ? 'grade ok' : '')}
-        ${kpi(admin ? 'Asistencia global' : 'Asistencia en mis cursos', asist == null ? '—' : `${fmtNota(asist)}%`, `${asistRows.length} registros`, '🗓️')}
+        ${kpi(admin ? 'Estudiantes' : 'Mis estudiantes', est.length, admin ? `${padres.length} padres · ${tutores.length} tutores` : '', 'graduation-cap')}
+        ${kpi(admin ? 'Cursos activos' : 'Mis cursos', cursos.length, `${nItems} evaluaciones`, 'book-open')}
+        ${kpi('Por calificar', porCalificar.length, 'Entregas sin nota', 'inbox', porCalificar.length ? 'grade ok' : '')}
+        ${kpi(admin ? 'Asistencia global' : 'Asistencia en mis cursos', asist == null ? '—' : `${fmtNota(asist)}%`, `${asistRows.length} registros`, 'calendar-check')}
     </div>
 
     <section class="card">
@@ -597,12 +600,12 @@ function viewTutorDashboard() {
         ${cursos.length ? `<div class="table-wrap"><table class="table">
             <thead><tr><th>Curso</th>${admin ? '<th>Tutor</th>' : ''}<th class="num">Estudiantes</th><th class="num">Evaluaciones</th><th class="center">Promedio</th><th class="center">Riesgo (&lt;${CONFIG.NOTA_APROBACION})</th><th></th></tr></thead>
             <tbody>${filasCursos}</tbody></table></div>`
-        : emptyState(admin ? 'Aún no hay cursos. Crea el primero y asígnale un tutor.' : 'Aún no tienes cursos asignados. El administrador te los asignará.', '📚')}
+        : emptyState(admin ? 'Aún no hay cursos. Crea el primero y asígnale un tutor.' : 'Aún no tienes cursos asignados. El administrador te los asignará.', 'book-open')}
     </section>
 
     <section class="card">
         <div class="card-head"><h2>Entregas por calificar</h2>${porCalificar.length > 8 ? `<span class="badge">+${porCalificar.length - 8} más</span>` : ''}</div>
-        ${porCalificar.length ? `<ul class="item-list">${filasPend}</ul>` : emptyState('No hay entregas pendientes. ¡Todo al día!', '✅')}
+        ${porCalificar.length ? `<ul class="item-list">${filasPend}</ul>` : emptyState('No hay entregas pendientes. ¡Todo al día!', 'circle-check')}
     </section>`;
 }
 
@@ -617,7 +620,7 @@ function viewUsuarios() {
         : [['ESTUDIANTE', 'Estudiantes'], ['PADRE', 'Padres']];
     if (!tabs.some(([v]) => v === f.rol)) f.rol = tabs[0][0];
     return `
-    ${admin ? '' : '<p class="alert alert-info">ℹ️ Estudiantes inscritos en tus cursos. Puedes ver su progreso completo en solo lectura; las cuentas las gestiona el administrador.</p>'}
+    ${admin ? '' : `<p class="alert alert-info">${ico('info')}<span>Estudiantes inscritos en tus cursos. Puedes ver su progreso completo en solo lectura; las cuentas las gestiona el administrador.</span></p>`}
     <div class="section-title">
         <div class="tabs" role="tablist">${tabs.map(([v, l]) =>
             `<button class="tab" role="tab" aria-selected="${f.rol === v}" data-action="users-rol" data-rol="${v}">${l}</button>`).join('')}</div>
@@ -638,7 +641,7 @@ function usersTable() {
         .filter(u => u.ID !== state.me.ID && matchRol(u) &&
             (!query || `${u.Nombre} ${u.Email} ${u.Grado}`.toLowerCase().includes(query)))
         .sort(byName);
-    if (!list.length) return emptyState('No hay usuarios que coincidan.', '🔎');
+    if (!list.length) return emptyState('No hay usuarios que coincidan.', 'search');
 
     const rows = list.map(u => {
         let rel = '—';
@@ -662,8 +665,8 @@ function usersTable() {
             ${admin ? `<td>${u.Vinculado ? '<span class="badge badge-success">Activa</span>' : '<span class="badge badge-warn" title="Se vinculará cuando inicie sesión por primera vez">Pendiente</span>'}${u.DebeCambiarClave === 'SI' ? ' <span class="badge" title="Aún no cambia su contraseña temporal">Clave temporal</span>' : ''}</td>` : ''}
             <td class="actions">
                 ${u.Rol === ROLES.ESTUDIANTE ? `<a class="btn btn-ghost btn-sm" href="#/estudiante/${encodeURIComponent(u.ID)}">Ver progreso</a>` : ''}
-                ${editable ? `<button class="icon-btn" data-action="edit-user" data-id="${esc(u.ID)}" aria-label="Editar ${esc(u.Nombre)}" title="Editar">✏️</button>
-                <button class="icon-btn danger" data-action="delete-user" data-id="${esc(u.ID)}" aria-label="Eliminar ${esc(u.Nombre)}" title="Eliminar">🗑️</button>` : ''}
+                ${editable ? `<button class="icon-btn" data-action="edit-user" data-id="${esc(u.ID)}" aria-label="Editar ${esc(u.Nombre)}" title="Editar">${ico('pencil')}</button>
+                <button class="icon-btn danger" data-action="delete-user" data-id="${esc(u.ID)}" aria-label="Eliminar ${esc(u.Nombre)}" title="Eliminar">${ico('trash')}</button>` : ''}
             </td></tr>`;
     }).join('');
 
@@ -752,7 +755,7 @@ async function deleteUserFlow(u) {
     const extra = u.Rol === ROLES.ESTUDIANTE
         ? '<p class="alert alert-warn">Se retirará de sus cursos y se desvinculará de sus padres. Sus notas, entregas y asistencia se conservan como historial.</p>'
         : u.Rol === ROLES.TUTOR && asignados.length
-            ? `<p class="alert alert-warn">⚠️ Tiene cursos asignados (${esc(asignados.map(c => c.NombreCurso).join(', '))}). Reasígnalos a otro tutor antes de eliminarlo.</p>`
+            ? `<p class="alert alert-warn">${ico('alert-triangle')}<span>Tiene cursos asignados (${esc(asignados.map(c => c.NombreCurso).join(', '))}). Reasígnalos a otro tutor antes de eliminarlo.</span></p>`
             : '';
     await openModal({
         title: `Eliminar a ${u.Nombre}`,
@@ -780,16 +783,16 @@ function viewCursos() {
         return `<a class="card course-card" href="#/curso/${encodeURIComponent(c.CursoID)}">
             <h3>${esc(c.NombreCurso)}</h3>
             <p>${esc(c.Descripcion || 'Sin descripción')}</p>
-            ${admin ? `<p>🧑‍🏫 <strong>${esc(tutorDe(c))}</strong></p>` : ''}
+            ${admin ? `<p class="meta-line">${ico('presentation', 'icon-sm')}<strong>${esc(tutorDe(c))}</strong></p>` : ''}
             <div class="course-stats">
-                <span>🧩 ${units.length} unidades</span>
-                <span>📝 ${(idx.itemsByCurso.get(c.CursoID) || []).length} evaluaciones</span>
-                <span>🎓 ${alumnosDe(c.CursoID).length} estudiantes</span>
+                <span>${ico('layers', 'icon-sm')} ${units.length} unidades</span>
+                <span>${ico('clipboard-list', 'icon-sm')} ${(idx.itemsByCurso.get(c.CursoID) || []).length} evaluaciones</span>
+                <span>${ico('graduation-cap', 'icon-sm')} ${alumnosDe(c.CursoID).length} estudiantes</span>
             </div></a>`;
     }).join('')}</div>`
     : `<section class="card">${emptyState(admin
         ? 'Crea el primer curso (Matemática, Inglés…) y asígnale un tutor.'
-        : 'Aún no tienes cursos asignados. El administrador te los asignará.', '📚')}</section>`}`;
+        : 'Aún no tienes cursos asignados. El administrador te los asignará.', 'book-open')}</section>`}`;
 }
 
 function courseForm(c = null) {
@@ -822,22 +825,22 @@ async function openCourseModal(c = null) {
 
 function viewCursoDetalle(cursoId) {
     const c = idx.cursos.get(cursoId);
-    if (!c) return `<section class="card">${emptyState('El curso no existe.', '🔎', '<a class="btn btn-ghost" href="#/cursos">Volver a cursos</a>')}</section>`;
+    if (!c) return `<section class="card">${emptyState('El curso no existe.', 'search', '<a class="btn btn-ghost" href="#/cursos">Volver a cursos</a>')}</section>`;
     const tabs = [['evaluaciones', 'Evaluaciones'], ['unidades', 'Unidades y ponderación'], ['pensum', 'Pensum'], ['estudiantes', 'Estudiantes']];
     const tab = state.cursoTab;
     const m = canManage(c.CursoID);
     const body = { evaluaciones: cursoEvaluaciones, unidades: cursoUnidades, pensum: cursoPensum, estudiantes: cursoEstudiantes }[tab](c, m);
     return `
     <div class="row-between">
-        <div><a class="btn btn-link" href="#/cursos">← Cursos</a>
-            <p class="muted">🧑‍🏫 ${esc(tutorDe(c))}${c.Descripcion ? ' · ' + esc(c.Descripcion) : ''}</p></div>
+        <div><a class="btn btn-link" href="#/cursos">${ico('arrow-left')} Cursos</a>
+            <p class="muted meta-line">${ico('presentation', 'icon-sm')}${esc(tutorDe(c))}${c.Descripcion ? ' · ' + esc(c.Descripcion) : ''}</p></div>
         <div class="row">
-            ${m ? `<button class="btn btn-ghost btn-sm" data-action="open-gradebook" data-curso="${esc(c.CursoID)}">📝 Calificar</button>` : ''}
-            ${isAdmin() ? `<button class="btn btn-ghost btn-sm" data-action="edit-course" data-id="${esc(c.CursoID)}">✏️ Editar / reasignar</button>
-            <button class="btn btn-ghost btn-sm" data-action="delete-course" data-id="${esc(c.CursoID)}">🗑️ Eliminar</button>` : ''}
+            ${m ? `<button class="btn btn-ghost btn-sm" data-action="open-gradebook" data-curso="${esc(c.CursoID)}">${ico('clipboard-check')} Calificar</button>` : ''}
+            ${isAdmin() ? `<button class="btn btn-ghost btn-sm" data-action="edit-course" data-id="${esc(c.CursoID)}">${ico('pencil')} Editar / reasignar</button>
+            <button class="btn btn-ghost btn-sm" data-action="delete-course" data-id="${esc(c.CursoID)}">${ico('trash')} Eliminar</button>` : ''}
         </div>
     </div>
-    ${m ? '' : '<p class="alert alert-info">👁️ Curso de otro tutor: solo lectura.</p>'}
+    ${m ? '' : `<p class="alert alert-info">${ico('eye')}<span>Curso de otro tutor: solo lectura.</span></p>`}
     <div class="tabs" role="tablist">${tabs.map(([v, l]) =>
         `<button class="tab" role="tab" aria-selected="${tab === v}" data-action="curso-tab" data-tab="${v}">${l}</button>`).join('')}</div>
     ${body}`;
@@ -851,7 +854,7 @@ function cursoUnidades(c, m) {
     return `<section class="card">
         <div class="card-head"><div class="row"><h2>Unidades</h2>${defined.length ? sumBadge(sum, 'Total') : ''}</div>
             ${m ? `<button class="btn btn-primary btn-sm" data-action="new-unit" data-curso="${esc(c.CursoID)}">+ Unidad</button>` : ''}</div>
-        ${sinDefinir.length ? `<div class="card-body"><p class="alert alert-info">ℹ️ ${defined.length ? 'Hay evaluaciones en unidades sin ponderación configurada (cuentan como 0%): ' + sinDefinir.map(u => 'U' + u.numero).join(', ') : 'Sin unidades configuradas: todas las unidades pesan lo mismo en el promedio final.'}</p></div>` : ''}
+        ${sinDefinir.length ? `<div class="card-body"><p class="alert alert-info">${ico('info')}<span>${defined.length ? 'Hay evaluaciones en unidades sin ponderación configurada (cuentan como 0%): ' + sinDefinir.map(u => 'U' + u.numero).join(', ') : 'Sin unidades configuradas: todas las unidades pesan lo mismo en el promedio final.'}</span></p></div>` : ''}
         ${defined.length ? `<div class="table-wrap"><table class="table">
             <thead><tr><th>#</th><th>Nombre</th><th class="num">Ponderación</th><th class="num">Evaluaciones</th><th>Suma de evaluaciones</th><th></th></tr></thead>
             <tbody>${defined.map(u => {
@@ -860,10 +863,10 @@ function cursoUnidades(c, m) {
                 return `<tr><td><strong>U${esc(u.Unidad)}</strong></td><td>${esc(u.NombreUnidad)}</td>
                     <td class="num">${fmtPeso(u.Ponderacion)}</td><td class="num">${its.length}</td>
                     <td>${its.length ? sumBadge(s) : '<span class="muted">—</span>'}</td>
-                    <td class="actions">${m ? `<button class="icon-btn" data-action="edit-unit" data-id="${esc(u.UnidadID)}" aria-label="Editar unidad">✏️</button>
-                    <button class="icon-btn danger" data-action="delete-unit" data-id="${esc(u.UnidadID)}" aria-label="Eliminar unidad">🗑️</button>` : ''}</td></tr>`;
+                    <td class="actions">${m ? `<button class="icon-btn" data-action="edit-unit" data-id="${esc(u.UnidadID)}" aria-label="Editar unidad" title="Editar">${ico('pencil')}</button>
+                    <button class="icon-btn danger" data-action="delete-unit" data-id="${esc(u.UnidadID)}" aria-label="Eliminar unidad" title="Eliminar">${ico('trash')}</button>` : ''}</td></tr>`;
             }).join('')}</tbody></table></div>`
-        : emptyState('Define las unidades del curso y su peso (%) en la nota final.', '🧩')}
+        : emptyState('Define las unidades del curso y su peso (%) en la nota final.', 'layers')}
     </section>`;
 }
 
@@ -913,10 +916,10 @@ function cursoPensum(c, m) {
                 <ul class="item-list">${temas.map(t => `<li class="item-row">
                     <span class="badge">Tema</span>
                     <div class="item-main"><strong>${esc(t.Tema)}</strong>${t.Detalle ? `<span class="muted">${esc(t.Detalle)}</span>` : ''}</div>
-                    <div class="item-side">${m ? `<button class="icon-btn" data-action="edit-pensum" data-id="${esc(t.PensumID)}" aria-label="Editar tema">✏️</button>
-                    <button class="icon-btn danger" data-action="delete-pensum" data-id="${esc(t.PensumID)}" aria-label="Eliminar tema">🗑️</button>` : ''}</div>
+                    <div class="item-side">${m ? `<button class="icon-btn" data-action="edit-pensum" data-id="${esc(t.PensumID)}" aria-label="Editar tema" title="Editar">${ico('pencil')}</button>
+                    <button class="icon-btn danger" data-action="delete-pensum" data-id="${esc(t.PensumID)}" aria-label="Eliminar tema" title="Eliminar">${ico('trash')}</button>` : ''}</div>
                 </li>`).join('')}</ul></div>`;
-        }).join('') : emptyState('Agrega los temas que se cubrirán en cada unidad.', '🗂️')}
+        }).join('') : emptyState('Agrega los temas que se cubrirán en cada unidad.', 'folder-open')}
     </section>`;
 }
 
@@ -956,11 +959,11 @@ function cursoEvaluaciones(c, m) {
                         <div class="item-main">${itemLink(i)}
                             <div class="item-meta"><span>Ponderación ${fmtPeso(i.Ponderacion)}</span>${i.FechaEntrega ? `<span>Entrega ${fmtDate(i.FechaEntrega)}</span>` : ''}<span>${calificadas}/${alumnos} calificados</span></div></div>
                         <div class="item-side">${m ? `
-                            <button class="icon-btn" data-action="edit-item" data-id="${esc(i.ItemID)}" aria-label="Editar evaluación">✏️</button>
-                            <button class="icon-btn danger" data-action="delete-item" data-id="${esc(i.ItemID)}" aria-label="Eliminar evaluación">🗑️</button>` : ''}
+                            <button class="icon-btn" data-action="edit-item" data-id="${esc(i.ItemID)}" aria-label="Editar evaluación" title="Editar">${ico('pencil')}</button>
+                            <button class="icon-btn danger" data-action="delete-item" data-id="${esc(i.ItemID)}" aria-label="Eliminar evaluación" title="Eliminar">${ico('trash')}</button>` : ''}
                         </div></li>`;
                 }).join('')}</ul></div>`;
-        }).join('') : emptyState('Crea tareas, pruebas o exámenes con su enlace y ponderación.', '📝')}
+        }).join('') : emptyState('Crea tareas, pruebas o exámenes con su enlace y ponderación.', 'clipboard-list')}
     </section>`;
 }
 
@@ -996,7 +999,7 @@ async function deleteItemFlow(it) {
         danger: true,
         submitLabel: 'Eliminar evaluación',
         body: conDatos
-            ? `<p class="alert alert-warn">⚠️ Esta evaluación tiene ${conDatos} entrega(s)/nota(s). Se eliminarán y el cambio quedará auditado.</p>${justificationField()}`
+            ? `<p class="alert alert-warn">${ico('alert-triangle')}<span>Esta evaluación tiene ${conDatos} entrega(s)/nota(s). Se eliminarán y el cambio quedará auditado.</span></p>${justificationField()}`
             : '<p>La evaluación no tiene notas registradas. ¿Eliminarla?</p>',
         onSubmit: async (fd) => {
             await withBusy(() => api('deleteItem', { ItemID: it.ItemID, justificacion: fd.get('justificacion') || '' }));
@@ -1016,7 +1019,7 @@ function cursoEstudiantes(c) {
             ${lista.length ? `<ul class="item-list">${lista.map(s => `<li class="item-row">${avatar(s, 'sm')}
                 <div class="item-main"><strong>${esc(s.Nombre)}</strong><span class="muted">${esc(s.Grado || '')}</span></div>
                 <div class="item-side"><a class="btn btn-ghost btn-sm" href="#/estudiante/${encodeURIComponent(s.ID)}">Ver progreso</a></div></li>`).join('')}</ul>`
-            : emptyState('Aún no hay estudiantes inscritos en este curso.', '🎓')}
+            : emptyState('Aún no hay estudiantes inscritos en este curso.', 'graduation-cap')}
         </section>`;
     }
     const est = students();
@@ -1026,7 +1029,7 @@ function cursoEstudiantes(c) {
         <div class="card-body">${est.length ? `<div class="check-list">${est.map(s => `
             <label class="check-item"><input type="checkbox" name="est" value="${esc(s.ID)}" ${inscritos.has(s.ID) ? 'checked' : ''}>
             ${avatar(s, 'sm')}<span><strong>${esc(s.Nombre)}</strong><small>${esc(s.Grado || s.Email)}</small></span></label>`).join('')}</div>`
-            : emptyState('Crea cuentas de estudiantes en "Usuarios" para inscribirlos.', '🎓', '<a class="btn btn-ghost" href="#/usuarios">Ir a usuarios</a>')}
+            : emptyState('Crea cuentas de estudiantes en "Usuarios" para inscribirlos.', 'graduation-cap', '<a class="btn btn-ghost" href="#/usuarios">Ir a usuarios</a>')}
         </div></form>`;
 }
 
@@ -1067,7 +1070,7 @@ function gbValue(estId, itemId) {
 
 function viewCalificaciones() {
     const cursos = cursosGestionables();   // tutor: solo sus cursos asignados
-    if (!cursos.length) return `<section class="card">${emptyState(isAdmin() ? 'Primero crea un curso.' : 'Aún no tienes cursos asignados.', '📚')}</section>`;
+    if (!cursos.length) return `<section class="card">${emptyState(isAdmin() ? 'Primero crea un curso.' : 'Aún no tienes cursos asignados.', 'book-open')}</section>`;
     if (!cursos.some(c => c.CursoID === state.gb.cursoId)) state.gb.cursoId = cursos[0].CursoID;
     const cursoId = state.gb.cursoId;
     const units = Grades.units(cursoId);
@@ -1092,8 +1095,8 @@ function gradebookTable(cursoId) {
     const alumnos = alumnosDe(cursoId);
     const allUnits = Grades.units(cursoId);
     const units = allUnits.filter(u => state.gb.unidad === 'all' || String(u.numero) === String(state.gb.unidad));
-    if (!alumnos.length) return emptyState('No hay estudiantes inscritos en este curso.', '🎓', `<a class="btn btn-ghost" href="#/curso/${encodeURIComponent(cursoId)}">Inscribir estudiantes</a>`);
-    if (!allUnits.some(u => u.items.length)) return emptyState('Este curso aún no tiene evaluaciones.', '📝', `<a class="btn btn-ghost" href="#/curso/${encodeURIComponent(cursoId)}">Crear evaluaciones</a>`);
+    if (!alumnos.length) return emptyState('No hay estudiantes inscritos en este curso.', 'graduation-cap', `<a class="btn btn-ghost" href="#/curso/${encodeURIComponent(cursoId)}">Inscribir estudiantes</a>`);
+    if (!allUnits.some(u => u.items.length)) return emptyState('Este curso aún no tiene evaluaciones.', 'clipboard-list', `<a class="btn btn-ghost" href="#/curso/${encodeURIComponent(cursoId)}">Crear evaluaciones</a>`);
 
     const head1 = units.map(u => `<th class="unit-th" colspan="${u.items.length + 1}">U${u.numero} · ${esc(u.nombre)} <small>(${fmtPeso(u.peso)})</small></th>`).join('');
     const head2 = units.map(u => u.items.map(i =>
@@ -1106,7 +1109,7 @@ function gradebookTable(cursoId) {
             const key = `${a.ID}|${i.ItemID}`;
             const draft = state.gb.draft.has(key);
             const val = draft ? state.gb.draft.get(key) : (notaGuardada(a.ID, i.ItemID) ?? '');
-            return `<td class="cell">${entregaBtn(idx.entregas.get(key), '📎', 'file-dot')}
+            return `<td class="cell">${entregaBtn(idx.entregas.get(key), ico('paperclip'), 'file-dot')}
                 <input class="grade-input${draft ? ' is-dirty' : ''}" type="number" inputmode="decimal" min="0" max="100" step="0.01"
                     value="${esc(val)}" data-input="gb-cell" data-est="${esc(a.ID)}" data-item="${esc(i.ItemID)}"
                     aria-label="${esc(`${a.Nombre} · ${i.Titulo}`)}"></td>`;
@@ -1226,7 +1229,7 @@ async function gbSave() {
 
 function viewAsistencia() {
     const cursos = cursosGestionables();   // tutor: solo sus cursos asignados
-    if (!cursos.length) return `<section class="card">${emptyState(isAdmin() ? 'Primero crea un curso.' : 'Aún no tienes cursos asignados.', '📚')}</section>`;
+    if (!cursos.length) return `<section class="card">${emptyState(isAdmin() ? 'Primero crea un curso.' : 'Aún no tienes cursos asignados.', 'book-open')}</section>`;
     if (!cursos.some(c => c.CursoID === state.att.cursoId)) state.att.cursoId = cursos[0].CursoID;
     const { cursoId, fecha } = state.att;
     const alumnos = alumnosDe(cursoId);
@@ -1259,10 +1262,10 @@ function viewAsistencia() {
         <button class="btn btn-ghost" data-action="att-all-present" ${alumnos.length ? '' : 'disabled'}>Todos presentes</button>
         <button class="btn btn-primary" data-action="att-save" ${state.att.draft.size ? '' : 'disabled'}>Guardar asistencia${state.att.draft.size ? ` (${state.att.draft.size})` : ''}</button>
     </div>
-    ${existentes.size ? '<p class="alert alert-info">ℹ️ Esta fecha ya tiene asistencia registrada. Modificarla requiere justificación.</p>' : ''}
+    ${existentes.size ? `<p class="alert alert-info">${ico('info')}<span>Esta fecha ya tiene asistencia registrada. Modificarla requiere justificación.</span></p>` : ''}
     <section class="card">
         <div class="card-head"><h2>${fmtDate(fecha)}</h2><span class="badge">${alumnos.length} estudiantes</span></div>
-        ${alumnos.length ? `<ul class="att-list">${lista}</ul>` : emptyState('No hay estudiantes inscritos en este curso.', '🎓')}
+        ${alumnos.length ? `<ul class="att-list">${lista}</ul>` : emptyState('No hay estudiantes inscritos en este curso.', 'graduation-cap')}
     </section>
     ${alumnos.length ? `<section class="card">
         <div class="card-head"><h2>Resumen del curso</h2><span class="muted" style="font-size:13px">${fechas.length} sesión(es) registradas</span></div>
@@ -1311,7 +1314,7 @@ function viewAuditoria() {
     <div class="row-between" style="align-items:flex-end">
         <label class="field"><span>Estudiante</span>
             <select class="inline-select" data-change="audit-est">${options([['ALL', 'Todos'], ...est.map(s => [s.ID, s.Nombre])], f)}</select></label>
-        ${isAdmin() ? '<button class="btn btn-ghost" data-action="verify-audit">🛡️ Verificar integridad</button>' : ''}
+        ${isAdmin() ? `<button class="btn btn-ghost" data-action="verify-audit">${ico('shield-check')} Verificar integridad</button>` : ''}
     </div>
     <div id="audit-check">${state.auditCheck ? auditCheckHtml(state.auditCheck) : ''}</div>
     <section class="card">
@@ -1323,7 +1326,7 @@ function viewAuditoria() {
                 <td>${esc(idx.cursos.get(r.CursoID)?.NombreCurso || r.CursoID)}<br><small class="muted">${esc(idx.items.get(r.ItemID)?.Titulo || r.ItemID)}</small></td>
                 <td class="center">${gradePill(toNum(r.NotaAnterior))} → ${gradePill(toNum(r.NotaNueva))}</td>
                 <td class="wrap">${esc(r.Justificacion)}</td><td><small>${esc(r.ModificadoPor)}</small></td></tr>`).join('')}</tbody></table></div>`
-        : emptyState('Sin cambios de notas registrados.', '🧾')}
+        : emptyState('Sin cambios de notas registrados.', 'history')}
     </section>
     <section class="card">
         <div class="card-head"><h2>Bitácora de datos</h2><span class="badge">${bit.length}</span></div>
@@ -1333,20 +1336,20 @@ function viewAuditoria() {
                 <td>${fmtDateTime(r.Fecha)}</td><td>${name(r.EstudianteID)}</td>
                 <td><span class="badge">${esc(r.Entidad)} · ${esc(r.Accion)}</span></td>
                 <td class="wrap">${esc(r.Detalle)}</td><td class="wrap">${esc(r.Justificacion)}</td><td><small>${esc(r.ModificadoPor)}</small></td></tr>`).join('')}</tbody></table></div>`
-        : emptyState('Sin movimientos registrados.', '🧾')}
+        : emptyState('Sin movimientos registrados.', 'history')}
     </section>`;
 }
 
 function auditCheckHtml(r) {
     if (r.ok) {
-        return `<p class="alert alert-ok">✅ Integridad verificada (${fmtDateTime(r.verificadoEn)}): ${r.tablas.map(t => `${esc(t.tabla)} ${t.filas} registros`).join(' · ')}. Las notas vigentes coinciden con la auditoría.</p>`;
+        return `<p class="alert alert-ok">${ico('shield-check')}<span>Integridad verificada (${fmtDateTime(r.verificadoEn)}): ${r.tablas.map(t => `${esc(t.tabla)} ${t.filas} registros`).join(' · ')}. Las notas vigentes coinciden con la auditoría.</span></p>`;
     }
     const tablas = r.tablas.filter(t => t.totalErrores).map(t => `<li><strong>${esc(t.tabla)}</strong>: ${t.totalErrores} problema(s)
         <ul>${t.errores.slice(0, 10).map(e => `<li>${e.fila ? `Fila ${e.fila}: ` : ''}${esc(e.motivo)}</li>`).join('')}</ul></li>`).join('');
     const notas = r.notas.slice(0, 15).map(n => `<li>${esc(idx.users.get(n.EstudianteID)?.Nombre || n.EstudianteID)} · ${esc(idx.items.get(n.ItemID)?.Titulo || n.ItemID)}:
         en la hoja <strong>${esc(n.notaEnHoja || '—')}</strong>, auditada <strong>${esc(n.ultimaAuditada || '—')}</strong></li>`).join('');
-    return `<div class="alert alert-danger" role="alert"><div>
-        <strong>⚠️ Se detectaron modificaciones hechas fuera de la app.</strong>
+    return `<div class="alert alert-danger" role="alert">${ico('alert-triangle')}<div>
+        <strong>Se detectaron modificaciones hechas fuera de la app.</strong>
         <p>Revisa <em>Archivo → Historial de versiones</em> en la hoja para ver quién y cuándo.</p>
         ${tablas ? `<ul>${tablas}</ul>` : ''}
         ${notas ? `<p><strong>Notas que no coinciden con la auditoría:</strong></p><ul>${notas}</ul>` : ''}
@@ -1355,8 +1358,8 @@ function auditCheckHtml(r) {
 
 function viewTutorStudent(estId) {
     const u = idx.users.get(estId);
-    if (!u || u.Rol !== ROLES.ESTUDIANTE) return `<section class="card">${emptyState('Estudiante no encontrado.', '🔎', '<a class="btn btn-ghost" href="#/usuarios">Volver</a>')}</section>`;
-    return `<div><a class="btn btn-link" href="#/usuarios">← Usuarios</a></div>${progressView(estId, { showAudit: true })}`;
+    if (!u || u.Rol !== ROLES.ESTUDIANTE) return `<section class="card">${emptyState('Estudiante no encontrado.', 'search', '<a class="btn btn-ghost" href="#/usuarios">Volver</a>')}</section>`;
+    return `<div><a class="btn btn-link" href="#/usuarios">${ico('arrow-left')} Usuarios</a></div>${progressView(estId, { showAudit: true })}`;
 }
 
 // ==========================================================================
@@ -1386,13 +1389,13 @@ function viewStudentHome() {
     return `
     <div class="hero">${avatar(me, 'lg')}<div><h2>¡Hola, ${esc(String(me.Nombre).split(' ')[0])}!</h2><p>${esc(me.Grado || 'Bienvenido a TutoríasGT')}</p></div></div>
     <div class="grid grid-kpi">
-        ${kpi('Promedio general', `<span class="grade ${gradeClass(general)}">${fmtNota(general)}</span>`, 'Todos tus cursos', '🏆')}
-        ${kpi('Cursos', cursos.length, '', '📚')}
-        ${kpi('Tareas por entregar', pendientes, '', '📥')}
-        ${kpi('Asistencia', asist.pct == null ? '—' : `${fmtNota(asist.pct)}%`, `${asist.total} sesiones`, '🗓️')}
+        ${kpi('Promedio general', `<span class="grade ${gradeClass(general)}">${fmtNota(general)}</span>`, 'Todos tus cursos', 'award')}
+        ${kpi('Cursos', cursos.length, '', 'book-open')}
+        ${kpi('Tareas por entregar', pendientes, '', 'inbox')}
+        ${kpi('Asistencia', asist.pct == null ? '—' : `${fmtNota(asist.pct)}%`, `${asist.total} sesiones`, 'calendar-check')}
     </div>
     ${cursos.length ? `<div class="grid grid-2">${cursos.map(c => courseSummaryCard(me.ID, c, true)).join('')}</div>`
-        : `<section class="card">${emptyState('Aún no estás inscrito en ningún curso.', '📚')}</section>`}
+        : `<section class="card">${emptyState('Aún no estás inscrito en ningún curso.', 'book-open')}</section>`}
     ${proximas.length ? `<section class="card"><div class="card-head"><h2>Próximas entregas</h2></div>
         <ul class="item-list">${proximas.map(i => `<li class="item-row">${tipoBadge(i.Tipo)}
             <div class="item-main">${itemLink(i)}<div class="item-meta"><span>${esc(idx.cursos.get(i.CursoID)?.NombreCurso)}</span><span>Entrega ${fmtDate(i.FechaEntrega)}</span></div></div>
@@ -1402,7 +1405,7 @@ function viewStudentHome() {
 function courseSummaryCard(estId, c, linkToCourse = false) {
     const res = Grades.forStudent(estId, c.CursoID);
     return `<section class="card">
-        <div class="card-head"><div><h3>${esc(c.NombreCurso)}</h3><small class="muted">🧑‍🏫 ${esc(tutorDe(c))}</small></div>
+        <div class="card-head"><div><h3>${esc(c.NombreCurso)}</h3><small class="muted meta-line">${ico('presentation', 'icon-xs')}${esc(tutorDe(c))}</small></div>
             ${linkToCourse ? `<button class="btn btn-ghost btn-sm" data-action="open-student-course" data-curso="${esc(c.CursoID)}">Ver curso</button>` : ''}</div>
         <div class="card-body stack">
             <div class="row-between"><span class="muted">Promedio del curso</span><span class="grade-big grade ${gradeClass(res.final)}">${fmtNota(res.final)}</span></div>
@@ -1418,7 +1421,7 @@ function courseSummaryCard(estId, c, linkToCourse = false) {
 function viewStudentCursos() {
     const me = state.me;
     const cursos = cursosDe(me.ID);
-    if (!cursos.length) return `<section class="card">${emptyState('Aún no estás inscrito en ningún curso.', '📚')}</section>`;
+    if (!cursos.length) return `<section class="card">${emptyState('Aún no estás inscrito en ningún curso.', 'book-open')}</section>`;
     if (!cursos.some(c => c.CursoID === state.studentCurso)) state.studentCurso = cursos[0].CursoID;
     const c = idx.cursos.get(state.studentCurso);
     const res = Grades.forStudent(me.ID, c.CursoID);
@@ -1438,7 +1441,7 @@ function viewStudentCursos() {
                 ${temas.length ? `<ul class="topic-list">${temas.map(t => `<li><strong>${esc(t.Tema)}</strong>${t.Detalle ? ` — <small>${esc(t.Detalle)}</small>` : ''}</li>`).join('')}</ul>` : ''}
                 ${u.items.length ? `<ul class="item-list">${u.items.map(i => studentItemRow(i, me.ID)).join('')}</ul>` : ''}
             </div>`;
-        }).join('') || emptyState('Tu tutor aún no ha publicado evaluaciones.', '📝')}
+        }).join('') || emptyState('Tu tutor aún no ha publicado evaluaciones.', 'clipboard-list')}
     </section>`;
 }
 
@@ -1449,9 +1452,9 @@ function studentItemRow(item, estId) {
         ${tipoBadge(item.Tipo)}
         <div class="item-main">${itemLink(item)}
             <div class="item-meta"><span>Ponderación ${fmtPeso(item.Ponderacion)}</span>${item.FechaEntrega ? `<span>Entrega ${fmtDate(item.FechaEntrega)}</span>` : ''}
-            ${entregaBtn(st.ent, state.me.Rol === ROLES.ESTUDIANTE ? '📎 Ver mi entrega' : '📎 Ver entrega', 'btn btn-link')}</div></div>
+            ${entregaBtn(st.ent, `${ico('paperclip', 'icon-sm')} ${state.me.Rol === ROLES.ESTUDIANTE ? 'Ver mi entrega' : 'Ver entrega'}`, 'btn btn-link')}</div></div>
         <div class="item-side">${st.html}
-            ${puedeSubir ? `<button class="btn ${st.ent ? 'btn-ghost' : 'btn-primary'} btn-sm" data-action="upload-entrega" data-item="${esc(item.ItemID)}">${st.ent ? 'Reemplazar archivo' : '⬆ Subir entrega'}</button>` : ''}
+            ${puedeSubir ? `<button class="btn ${st.ent ? 'btn-ghost' : 'btn-primary'} btn-sm" data-action="upload-entrega" data-item="${esc(item.ItemID)}">${ico('upload')} ${st.ent ? 'Reemplazar archivo' : 'Subir entrega'}</button>` : ''}
         </div></li>`;
 }
 
@@ -1466,7 +1469,7 @@ function attendanceSection(estId, full = false) {
     const shown = full ? rows : rows.slice(0, 15);
     return `
     ${full ? `<div class="grid grid-kpi">
-        ${kpi('Asistencia', s.pct == null ? '—' : `${fmtNota(s.pct)}%`, 'Presente + tarde', '🗓️')}
+        ${kpi('Asistencia', s.pct == null ? '—' : `${fmtNota(s.pct)}%`, 'Presente + tarde', 'calendar-check')}
         ${kpi('Presente', s.Presente)}${kpi('Tarde', s.Tarde)}${kpi('Ausente', s.Ausente)}${kpi('Justificado', s.Justificado)}
     </div>` : ''}
     <section class="card">
@@ -1475,7 +1478,7 @@ function attendanceSection(estId, full = false) {
         <tbody>${shown.map(r => `<tr><td>${fmtDate(r.Fecha)}</td><td>${esc(idx.cursos.get(r.CursoID)?.NombreCurso || '—')}</td>
             <td><span class="badge ${color[r.Estado] || ''}">${esc(r.Estado)}</span></td></tr>`).join('')}</tbody></table></div>
         ${rows.length > shown.length ? `<p class="muted card-body">Mostrando las últimas ${shown.length} de ${rows.length} sesiones.</p>` : ''}`
-        : emptyState('Aún no hay asistencia registrada.', '🗓️')}
+        : emptyState('Aún no hay asistencia registrada.', 'calendar-check')}
     </section>`;
 }
 
@@ -1485,7 +1488,7 @@ function attendanceSection(estId, full = false) {
 
 function viewParent() {
     const hijos = String(state.me.HijosIDs || '').split(',').map(id => idx.users.get(id)).filter(Boolean).sort(byName);
-    if (!hijos.length) return `<section class="card">${emptyState('Tu cuenta aún no tiene estudiantes vinculados. Contacta al tutor.', '👨‍👩‍👧')}</section>`;
+    if (!hijos.length) return `<section class="card">${emptyState('Tu cuenta aún no tiene estudiantes vinculados. Contacta al tutor.', 'users')}</section>`;
     if (!hijos.some(h => h.ID === state.childId)) state.childId = hijos[0].ID;
     return `
     ${hijos.length > 1 ? `<div class="child-picker" role="group" aria-label="Seleccionar hijo">${hijos.map(h =>
@@ -1504,7 +1507,7 @@ function progressView(estId, { showAudit = false } = {}) {
     const cursoCards = cursos.map(c => {
         const res = Grades.forStudent(estId, c.CursoID);
         return `<section class="card">
-            <div class="card-head"><div><h3>${esc(c.NombreCurso)}</h3><small class="muted">🧑‍🏫 ${esc(tutorDe(c))}</small></div><div class="row"><span class="muted">Final</span>${gradePill(res.final)}</div></div>
+            <div class="card-head"><div><h3>${esc(c.NombreCurso)}</h3><small class="muted meta-line">${ico('presentation', 'icon-xs')}${esc(tutorDe(c))}</small></div><div class="row"><span class="muted">Final</span>${gradePill(res.final)}</div></div>
             ${res.units.length ? `<div class="table-wrap"><table class="table">
                 <thead><tr><th>Unidad</th><th class="num">Peso</th><th style="width:30%">Progreso</th><th class="center">Promedio</th></tr></thead>
                 <tbody>${res.units.map(un => `<tr><td><strong>U${un.numero}</strong> · ${esc(un.nombre)}</td><td class="num">${fmtPeso(un.peso)}</td>
@@ -1512,7 +1515,7 @@ function progressView(estId, { showAudit = false } = {}) {
                     <td class="center">${gradePill(un.promedio)}</td></tr>`).join('')}</tbody></table></div>
             <details class="more"><summary>Ver notas por evaluación</summary>
                 <ul class="item-list">${res.units.flatMap(un => un.items).map(i => studentItemRow(i, estId)).join('')}</ul>
-            </details>` : emptyState('Sin evaluaciones todavía.', '📝')}
+            </details>` : emptyState('Sin evaluaciones todavía.', 'clipboard-list')}
         </section>`;
     }).join('');
 
@@ -1520,12 +1523,12 @@ function progressView(estId, { showAudit = false } = {}) {
     <div class="hero">${avatar(u, 'lg')}<div><h2>${esc(u?.Nombre)}</h2>
         <p>${esc(u?.Grado || '')}${u?.FechaNacimiento ? ` · Nac. ${fmtDate(u.FechaNacimiento)}` : ''}</p></div></div>
     <div class="grid grid-kpi">
-        ${kpi('Promedio general', `<span class="grade ${gradeClass(general)}">${fmtNota(general)}</span>`, `Aprobado ≥ ${CONFIG.NOTA_APROBACION}`, '🏆')}
-        ${kpi('Asistencia', asist.pct == null ? '—' : `${fmtNota(asist.pct)}%`, `${asist.Ausente} ausencia(s)`, '🗓️')}
-        ${kpi('Cursos', cursos.length, '', '📚')}
-        ${kpi('Evaluaciones calificadas', calificadas, '', '✅')}
+        ${kpi('Promedio general', `<span class="grade ${gradeClass(general)}">${fmtNota(general)}</span>`, `Aprobado ≥ ${CONFIG.NOTA_APROBACION}`, 'award')}
+        ${kpi('Asistencia', asist.pct == null ? '—' : `${fmtNota(asist.pct)}%`, `${asist.Ausente} ausencia(s)`, 'calendar-check')}
+        ${kpi('Cursos', cursos.length, '', 'book-open')}
+        ${kpi('Evaluaciones calificadas', calificadas, '', 'circle-check')}
     </div>
-    ${cursoCards || `<section class="card">${emptyState('Sin cursos inscritos.', '📚')}</section>`}
+    ${cursoCards || `<section class="card">${emptyState('Sin cursos inscritos.', 'book-open')}</section>`}
     ${attendanceSection(estId)}
     ${showAudit ? auditTimeline(estId) : ''}`;
 }
@@ -1548,9 +1551,9 @@ function auditTimeline(estId) {
         ${eventos.length ? `<ul class="timeline">${eventos.slice(0, 100).map(e => `<li>
             <div class="row-between"><strong>${esc(e.titulo)}</strong><small class="muted">${fmtDateTime(e.fecha)}</small></div>
             <div>${e.detalle}</div>
-            ${e.just ? `<p class="quote">💬 ${esc(e.just)}</p>` : ''}
+            ${e.just ? `<p class="quote">${ico('message-square', 'icon-sm')}<span>${esc(e.just)}</span></p>` : ''}
             <small class="muted">Por ${esc(e.por)}</small></li>`).join('')}</ul>`
-        : emptyState('Sin cambios ni comentarios registrados.', '💬')}
+        : emptyState('Sin cambios ni comentarios registrados.', 'message-square')}
     </section>`;
 }
 
@@ -1561,7 +1564,7 @@ function viewPerfil() {
         <section class="card profile-photo">
             ${avatar(me, 'xl')}
             <div><strong>${esc(me.Nombre)}</strong><div>${roleBadge(me.Rol)}</div></div>
-            <button class="btn btn-ghost btn-sm" data-action="upload-photo">📷 Cambiar foto</button>
+            <button class="btn btn-ghost btn-sm" data-action="upload-photo">${ico('camera')} Cambiar foto</button>
             <small class="muted">JPG, PNG o WebP · se recorta a ${CONFIG.FOTO_PX}×${CONFIG.FOTO_PX} px</small>
         </section>
         <form class="card" data-submit="profile">
@@ -1589,7 +1592,7 @@ function openModal({ title, body, submitLabel = 'Guardar', danger = false, wide 
     const dlg = $('#modal');
     dlg.className = `modal${wide ? ' modal-wide' : ''}`;
     dlg.innerHTML = `<form class="modal-card" novalidate>
-        <header class="modal-head"><h2>${esc(title)}</h2><button type="button" class="icon-btn" data-close aria-label="Cerrar">✕</button></header>
+        <header class="modal-head"><h2>${esc(title)}</h2><button type="button" class="icon-btn" data-close aria-label="Cerrar">${ico('x')}</button></header>
         <div class="modal-body">${body}</div>
         <p class="form-error" role="alert" hidden></p>
         <footer class="modal-foot">
@@ -1669,9 +1672,9 @@ async function uploadEntrega(btn) {
     if (!file.size) return toast('El archivo está vacío.', 'error');
     if (file.size > CONFIG.MAX_ENTREGA_MB * 1024 * 1024) return toast(`El archivo supera ${CONFIG.MAX_ENTREGA_MB} MB.`, 'error');
 
-    const label = btn.textContent;
+    const label = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = 'Subiendo…';
+    btn.innerHTML = `${ico('loader', 'spin')} Subiendo…`;
     try {
         const base64 = await fileToBase64(file);
         await withBusy(() => api('submitEntrega', { ItemID: item.ItemID, nombre: file.name, base64 }));
@@ -1680,15 +1683,15 @@ async function uploadEntrega(btn) {
     } catch (e) {
         toast(e.message, 'error');
         btn.disabled = false;
-        btn.textContent = label;
+        btn.innerHTML = label;
     }
 }
 
 /** Descarga una entrega. Se fuerza como archivo adjunto (nunca se abre dentro de la app). */
 async function downloadEntrega(btn) {
-    const label = btn.textContent;
+    const label = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = label.length > 2 ? 'Descargando…' : '⏳';
+    btn.innerHTML = btn.classList.contains('file-dot') ? ico('loader', 'spin') : `${ico('loader', 'spin')} Descargando…`;
     try {
         const f = await withBusy(() => api('getEntregaFile', { EntregaID: btn.dataset.id }));
         const bin = atob(f.base64);
@@ -1702,12 +1705,12 @@ async function downloadEntrega(btn) {
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 10000);
-        if (!f.integro) toast('⚠️ El archivo no coincide con el que se entregó originalmente. Pudo ser modificado después de la entrega.', 'error', 10000);
+        if (!f.integro) toast('El archivo no coincide con el que se entregó originalmente. Pudo ser modificado después de la entrega.', 'error', 10000);
     } catch (e) {
         toast(e.message, 'error');
     } finally {
         btn.disabled = false;
-        btn.textContent = label;
+        btn.innerHTML = label;
     }
 }
 
@@ -1726,7 +1729,7 @@ async function uploadPhoto(btn) {
     } catch (e) {
         toast(e.message, 'error');
         btn.disabled = false;
-        btn.textContent = '📷 Cambiar foto';
+        btn.innerHTML = `${ico('camera')} Cambiar foto`;
     }
 }
 
@@ -1960,12 +1963,12 @@ const SUBMITS = {
     },
 };
 
-/** Muestra u oculta la contraseña del campo asociado al botón 👁️. */
+/** Muestra u oculta la contraseña del campo asociado al botón del ojo. */
 function setPasswordVisible(btn, visible) {
     const input = btn.closest('.password-field')?.querySelector('input');
     if (!input) return;
     input.type = visible ? 'text' : 'password';
-    btn.textContent = visible ? '🙈' : '👁️';
+    btn.innerHTML = ico(visible ? 'eye-off' : 'eye');
     btn.setAttribute('aria-pressed', String(visible));
     const label = visible ? 'Ocultar contraseña' : 'Mostrar contraseña';
     btn.setAttribute('aria-label', label);
@@ -1978,7 +1981,7 @@ function hideAllPasswords() {
     $$('.password-toggle[aria-pressed="true"]').forEach(btn => {
         const input = btn.closest('.password-field')?.querySelector('input');
         if (input) input.type = 'password';
-        btn.textContent = '👁️';
+        btn.innerHTML = ico('eye');
         btn.setAttribute('aria-pressed', 'false');
         btn.setAttribute('aria-label', 'Mostrar contraseña');
         btn.title = 'Mostrar contraseña';
