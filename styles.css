@@ -140,6 +140,10 @@ kbd { font: 600 11px/1 var(--font); padding: 2px 6px; border-radius: 6px; backgr
     animation: spin 800ms linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.boot-error {
+    max-width: 360px; padding: 14px 18px; border-radius: var(--radius); text-align: center;
+    background: var(--risk-bg); color: #8E1426; font-size: 14px; font-weight: 600;
+}
 
 .auth-screen {
     min-height: 100vh; min-height: 100dvh;
@@ -373,6 +377,7 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-hei
 .check-item:hover { border-color: var(--border-strong); }
 .check-item:has(input:checked) { border-color: var(--secondary); background: var(--secondary-50); box-shadow: 0 6px 14px -10px rgba(59, 167, 242, .9); }
 .check-item small { display: block; color: var(--muted); }
+.check-item:has(input:disabled) { opacity: .5; cursor: not-allowed; background: var(--surface-2); }
 
 .justify-box {
     border: 1px solid #FFD89A; background: #FFF8EA; border-radius: var(--radius); padding: 16px;
@@ -395,6 +400,11 @@ input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-hei
 .badge-warn { background: var(--ok-bg); color: var(--ok); }
 .badge-danger { background: var(--risk-bg); color: var(--risk); }
 .badge-info { background: var(--info-bg); color: var(--info); }
+
+/* Modalidad de la clase */
+.badge-presencial { background: var(--primary-50); color: var(--primary); box-shadow: inset 0 0 0 1px rgba(11, 61, 145, .14); }
+.badge-remoto { background: var(--secondary-50); color: var(--secondary-700); box-shadow: inset 0 0 0 1px rgba(59, 167, 242, .3); }
+.segmented span .icon { width: 15px; height: 15px; margin-right: 2px; }
 
 .tipo-Tarea { background: var(--secondary-50); color: var(--secondary-700); }
 .tipo-Prueba { background: var(--tertiary-50); color: var(--tertiary-700); }

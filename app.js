@@ -43,6 +43,7 @@ const CONFIG = {
     NOTA_APROBACION: 60,
     NOTA_DESTACADA: 85,
     MIN_JUSTIFICACION: 10,
+    MAX_ALUMNOS_CURSO: 15,     // cupo por clase (el backend también lo valida)
 };
 
 // La interfaz solo oculta lo que cada rol no puede usar; los permisos reales los aplica el backend.
@@ -50,6 +51,7 @@ const ROLES = { ADMIN: 'ADMIN', TUTOR: 'TUTOR', ESTUDIANTE: 'ESTUDIANTE', PADRE:
 const ROLE_LABEL = { ADMIN: 'Administrador', TUTOR: 'Tutor', ESTUDIANTE: 'Estudiante', PADRE: 'Padre/Madre' };
 const TIPOS_ITEM = ['Tarea', 'Prueba', 'Examen', 'Proyecto'];
 const TIPOS_CON_ENTREGA = ['Tarea', 'Proyecto'];
+const MODALIDADES = ['Presencial', 'Remoto'];
 const ESTADOS_ASISTENCIA = ['Presente', 'Tarde', 'Ausente', 'Justificado'];
 
 window.__tgtIniciada = true;   // avisa a boot-check.js que la app sí arrancó
@@ -135,6 +137,15 @@ const isAdmin = () => state.me?.Rol === ROLES.ADMIN;
 const canManage = (cursoId) => isAdmin() || idx.cursos.get(cursoId)?.TutorID === state.me?.ID;
 const cursosGestionables = () => cursosOrdenados().filter(c => canManage(c.CursoID));
 const tutorDe = (c) => idx.users.get(c?.TutorID)?.Nombre || 'Sin tutor asignado';
+/** Etiqueta de modalidad de la clase: Presencial (ubicación) o Remoto (videollamada). */
+function modalidadBadge(c) {
+    if (c?.Modalidad === 'Presencial') return `<span class="badge badge-presencial">${ico('map-pin')}Presencial</span>`;
+    if (c?.Modalidad === 'Remoto') return `<span class="badge badge-remoto">${ico('video')}Remoto</span>`;
+    return '<span class="badge badge-warn">Sin modalidad</span>';
+}
+const cupoTexto = (n) => `${n}/${CONFIG.MAX_ALUMNOS_CURSO}`;
+const cursoOpcion = (c) => [c.CursoID, `${c.NombreCurso}${c.Modalidad ? ' · ' + c.Modalidad : ''}`];
+
 const tutoresDisponibles = () => state.db.users.filter(u => u.Rol === ROLES.TUTOR || u.Rol === ROLES.ADMIN).sort(byName);
 const notaGuardada = (estId, itemId) => toNum(idx.entregas.get(`${estId}|${itemId}`)?.Nota);
 
@@ -573,8 +584,9 @@ function viewTutorDashboard() {
         const riesgo = finales.filter(f => f != null && f < CONFIG.NOTA_APROBACION).length;
         return `<tr>
             <td><a href="#/curso/${encodeURIComponent(c.CursoID)}"><strong>${esc(c.NombreCurso)}</strong></a></td>
+            <td>${modalidadBadge(c)}</td>
             ${admin ? `<td>${esc(tutorDe(c))}</td>` : ''}
-            <td class="num">${alumnos.length}</td>
+            <td class="num">${cupoTexto(alumnos.length)}</td>
             <td class="num">${(idx.itemsByCurso.get(c.CursoID) || []).length}</td>
             <td class="center">${gradePill(prom)}</td>
             <td class="center">${riesgo ? `<span class="badge badge-danger">${riesgo} en riesgo</span>` : '<span class="badge badge-success">0</span>'}</td>
@@ -608,7 +620,7 @@ function viewTutorDashboard() {
         <div class="card-head"><h2>Rendimiento por curso</h2>
             ${admin ? '<button class="btn btn-primary btn-sm" data-action="new-course">+ Nuevo curso</button>' : ''}</div>
         ${cursos.length ? `<div class="table-wrap"><table class="table">
-            <thead><tr><th>Curso</th>${admin ? '<th>Tutor</th>' : ''}<th class="num">Estudiantes</th><th class="num">Evaluaciones</th><th class="center">Promedio</th><th class="center">Riesgo (&lt;${CONFIG.NOTA_APROBACION})</th><th></th></tr></thead>
+            <thead><tr><th>Curso</th><th>Modalidad</th>${admin ? '<th>Tutor</th>' : ''}<th class="num">Estudiantes</th><th class="num">Evaluaciones</th><th class="center">Promedio</th><th class="center">Riesgo (&lt;${CONFIG.NOTA_APROBACION})</th><th></th></tr></thead>
             <tbody>${filasCursos}</tbody></table></div>`
         : emptyState(admin ? 'Aún no hay cursos. Crea el primero y asígnale un tutor.' : 'Aún no tienes cursos asignados. El administrador te los asignará.', 'book-open')}
     </section>
@@ -791,13 +803,13 @@ function viewCursos() {
     ${cursos.length ? `<div class="grid grid-cards">${cursos.map(c => {
         const units = Grades.units(c.CursoID);
         return `<a class="card course-card" href="#/curso/${encodeURIComponent(c.CursoID)}">
-            <h3>${esc(c.NombreCurso)}</h3>
+            <div class="row-between"><h3>${esc(c.NombreCurso)}</h3>${modalidadBadge(c)}</div>
             <p>${esc(c.Descripcion || 'Sin descripción')}</p>
             ${admin ? `<p class="meta-line">${ico('presentation', 'icon-sm')}<strong>${esc(tutorDe(c))}</strong></p>` : ''}
             <div class="course-stats">
                 <span>${ico('layers', 'icon-sm')} ${units.length} unidades</span>
                 <span>${ico('clipboard-list', 'icon-sm')} ${(idx.itemsByCurso.get(c.CursoID) || []).length} evaluaciones</span>
-                <span>${ico('graduation-cap', 'icon-sm')} ${alumnosDe(c.CursoID).length} estudiantes</span>
+                <span>${ico('graduation-cap', 'icon-sm')} ${cupoTexto(alumnosDe(c.CursoID).length)} estudiantes</span>
             </div></a>`;
     }).join('')}</div>`
     : `<section class="card">${emptyState(admin
@@ -813,7 +825,14 @@ function courseForm(c = null) {
                 <option value="">— Selecciona —</option>
                 ${options(tutores.map(t => [t.ID, `${t.Nombre}${t.Rol === ROLES.ADMIN ? ' (administrador)' : ''}`]), c?.TutorID)}
             </select>
-            <small class="field-hint">El tutor asignado gestiona unidades, tareas, notas y asistencia de este curso. ${tutores.length <= 1 ? 'Para agregar tutores, créalos en "Usuarios" con rol Tutor.' : ''}</small></label>
+            <small class="field-hint">El tutor asignado gestiona unidades, tareas, notas y asistencia de este curso. Un tutor puede tener varias clases. ${tutores.length <= 1 ? 'Para agregar tutores, créalos en "Usuarios" con rol Tutor.' : ''}</small></label>
+        <fieldset class="field" style="border:0;padding:0;margin:0">
+            <span>Modalidad *</span>
+            <div class="segmented" role="radiogroup" aria-label="Modalidad">
+                ${MODALIDADES.map(m => `<label><input type="radio" name="Modalidad" value="${m}" required ${c?.Modalidad === m ? 'checked' : ''}><span>${ico(m === 'Presencial' ? 'map-pin' : 'video')} ${m}</span></label>`).join('')}
+            </div>
+            <small class="field-hint">Cupo máximo: ${CONFIG.MAX_ALUMNOS_CURSO} estudiantes por clase.</small>
+        </fieldset>
         <label class="field"><span>Descripción</span><textarea name="Descripcion" maxlength="1000">${esc(c?.Descripcion)}</textarea></label>`;
 }
 
@@ -824,7 +843,7 @@ async function openCourseModal(c = null) {
         onSubmit: async (fd) => {
             const r = await withBusy(() => api('saveCourse', {
                 CursoID: c?.CursoID, NombreCurso: fd.get('NombreCurso'), Descripcion: fd.get('Descripcion'),
-                TutorID: fd.get('TutorID'),
+                TutorID: fd.get('TutorID'), Modalidad: fd.get('Modalidad'),
             }));
             toast(c ? 'Curso actualizado.' : 'Curso creado.', 'success');
             await refresh();
@@ -843,7 +862,7 @@ function viewCursoDetalle(cursoId) {
     return `
     <div class="row-between">
         <div><a class="btn btn-link" href="#/cursos">${ico('arrow-left')} Cursos</a>
-            <p class="muted meta-line">${ico('presentation', 'icon-sm')}${esc(tutorDe(c))}${c.Descripcion ? ' · ' + esc(c.Descripcion) : ''}</p></div>
+            <div class="row">${modalidadBadge(c)}<span class="muted meta-line">${ico('presentation', 'icon-sm')}${esc(tutorDe(c))}</span>${c.Descripcion ? `<span class="muted">· ${esc(c.Descripcion)}</span>` : ''}</div></div>
         <div class="row">
             ${m ? `<button class="btn btn-ghost btn-sm" data-action="open-gradebook" data-curso="${esc(c.CursoID)}">${ico('clipboard-check')} Calificar</button>` : ''}
             ${isAdmin() ? `<button class="btn btn-ghost btn-sm" data-action="edit-course" data-id="${esc(c.CursoID)}">${ico('pencil')} Editar / reasignar</button>
@@ -1025,7 +1044,7 @@ function cursoEstudiantes(c) {
     if (!isAdmin()) {
         const lista = alumnosDe(c.CursoID);
         return `<section class="card">
-            <div class="card-head"><h2>Estudiantes inscritos (${lista.length})</h2><small class="muted">Las inscripciones las gestiona el administrador.</small></div>
+            <div class="card-head"><h2>Estudiantes inscritos (${cupoTexto(lista.length)})</h2><small class="muted">Las inscripciones las gestiona el administrador.</small></div>
             ${lista.length ? `<ul class="item-list">${lista.map(s => `<li class="item-row">${avatar(s, 'sm')}
                 <div class="item-main"><strong>${esc(s.Nombre)}</strong><span class="muted">${esc(s.Grado || '')}</span></div>
                 <div class="item-side"><a class="btn btn-ghost btn-sm" href="#/estudiante/${encodeURIComponent(s.ID)}">Ver progreso</a></div></li>`).join('')}</ul>`
@@ -1034,10 +1053,12 @@ function cursoEstudiantes(c) {
     }
     const est = students();
     return `<form class="card" data-submit="enrollment" data-curso="${esc(c.CursoID)}">
-        <div class="card-head"><h2>Estudiantes inscritos (${inscritos.size})</h2>
-            <button type="submit" class="btn btn-primary btn-sm" ${est.length ? '' : 'disabled'}>Guardar inscripciones</button></div>
+        <div class="card-head"><h2>Estudiantes inscritos</h2>
+            <div class="row"><span class="badge badge-brand" data-cupo>${cupoTexto(inscritos.size)} cupos usados</span>
+            <button type="submit" class="btn btn-primary btn-sm" ${est.length ? '' : 'disabled'}>Guardar inscripciones</button></div></div>
         <div class="card-body">${est.length ? `<div class="check-list">${est.map(s => `
-            <label class="check-item"><input type="checkbox" name="est" value="${esc(s.ID)}" ${inscritos.has(s.ID) ? 'checked' : ''}>
+            <label class="check-item"><input type="checkbox" name="est" value="${esc(s.ID)}" data-change="enroll-check" ${inscritos.has(s.ID) ? 'checked' : ''}
+                ${!inscritos.has(s.ID) && inscritos.size >= CONFIG.MAX_ALUMNOS_CURSO ? 'disabled' : ''}>
             ${avatar(s, 'sm')}<span><strong>${esc(s.Nombre)}</strong><small>${esc(s.Grado || s.Email)}</small></span></label>`).join('')}</div>`
             : emptyState('Crea cuentas de estudiantes en "Usuarios" para inscribirlos.', 'graduation-cap', '<a class="btn btn-ghost" href="#/usuarios">Ir a usuarios</a>')}
         </div></form>`;
@@ -1046,6 +1067,9 @@ function cursoEstudiantes(c) {
 async function saveEnrollment(form) {
     const cursoId = form.dataset.curso;
     const ids = $$('input[name="est"]:checked', form).map(i => i.value);
+    if (ids.length > CONFIG.MAX_ALUMNOS_CURSO) {
+        return toast(`Cada clase admite como máximo ${CONFIG.MAX_ALUMNOS_CURSO} estudiantes.`, 'error');
+    }
     const actuales = idx.alumnosByCurso.get(cursoId) || new Set();
     const quitados = [...actuales].filter(id => !ids.includes(id));
     const agregados = ids.filter(id => !actuales.has(id));
@@ -1089,7 +1113,7 @@ function viewCalificaciones() {
     return `
     <div class="gb-toolbar">
         <label class="field"><span>Curso</span>
-            <select class="inline-select" data-change="gb-curso">${options(cursos.map(c => [c.CursoID, c.NombreCurso]), cursoId)}</select></label>
+            <select class="inline-select" data-change="gb-curso">${options(cursos.map(cursoOpcion), cursoId)}</select></label>
         <label class="field"><span>Unidad</span>
             <select class="inline-select" data-change="gb-unidad">${options([['all', 'Todas las unidades'], ...units.map(u => [u.numero, `U${u.numero} · ${u.nombre}`])], state.gb.unidad)}</select></label>
         <div class="spacer"></div>
@@ -1266,7 +1290,7 @@ function viewAsistencia() {
 
     return `
     <div class="gb-toolbar">
-        <label class="field"><span>Curso</span><select class="inline-select" data-change="att-curso">${options(cursos.map(c => [c.CursoID, c.NombreCurso]), cursoId)}</select></label>
+        <label class="field"><span>Curso</span><select class="inline-select" data-change="att-curso">${options(cursos.map(cursoOpcion), cursoId)}</select></label>
         <label class="field"><span>Fecha</span><input type="date" value="${esc(fecha)}" data-change="att-fecha" max="${today()}"></label>
         <div class="spacer"></div>
         <button class="btn btn-ghost" data-action="att-all-present" ${alumnos.length ? '' : 'disabled'}>Todos presentes</button>
@@ -1415,7 +1439,7 @@ function viewStudentHome() {
 function courseSummaryCard(estId, c, linkToCourse = false) {
     const res = Grades.forStudent(estId, c.CursoID);
     return `<section class="card">
-        <div class="card-head"><div><h3>${esc(c.NombreCurso)}</h3><small class="muted meta-line">${ico('presentation', 'icon-xs')}${esc(tutorDe(c))}</small></div>
+        <div class="card-head"><div><h3>${esc(c.NombreCurso)}</h3><div class="row" style="gap:8px;margin-top:4px">${modalidadBadge(c)}<small class="muted meta-line">${ico('presentation', 'icon-xs')}${esc(tutorDe(c))}</small></div></div>
             ${linkToCourse ? `<button class="btn btn-ghost btn-sm" data-action="open-student-course" data-curso="${esc(c.CursoID)}">Ver curso</button>` : ''}</div>
         <div class="card-body stack">
             <div class="row-between"><span class="muted">Promedio del curso</span><span class="grade-big grade ${gradeClass(res.final)}">${fmtNota(res.final)}</span></div>
@@ -1441,7 +1465,7 @@ function viewStudentCursos() {
     <div class="tabs" role="tablist">${cursos.map(x =>
         `<button class="tab" role="tab" aria-selected="${x.CursoID === c.CursoID}" data-action="student-course" data-curso="${esc(x.CursoID)}">${esc(x.NombreCurso)}</button>`).join('')}</div>
     <section class="card">
-        <div class="card-head"><div><h2>${esc(c.NombreCurso)}</h2><p class="muted" style="font-size:14px">${esc(c.Descripcion || '')}</p></div>
+        <div class="card-head"><div><div class="row"><h2>${esc(c.NombreCurso)}</h2>${modalidadBadge(c)}</div><p class="muted" style="font-size:14px">${esc(c.Descripcion || '')}</p></div>
             <div class="row"><span class="muted">Promedio</span><span class="grade-big grade ${gradeClass(res.final)}">${fmtNota(res.final)}</span></div></div>
         ${res.units.map(u => {
             const temas = pensum.filter(p => +p.Unidad === u.numero);
@@ -1517,7 +1541,7 @@ function progressView(estId, { showAudit = false } = {}) {
     const cursoCards = cursos.map(c => {
         const res = Grades.forStudent(estId, c.CursoID);
         return `<section class="card">
-            <div class="card-head"><div><h3>${esc(c.NombreCurso)}</h3><small class="muted meta-line">${ico('presentation', 'icon-xs')}${esc(tutorDe(c))}</small></div><div class="row"><span class="muted">Final</span>${gradePill(res.final)}</div></div>
+            <div class="card-head"><div><h3>${esc(c.NombreCurso)}</h3><div class="row" style="gap:8px;margin-top:4px">${modalidadBadge(c)}<small class="muted meta-line">${ico('presentation', 'icon-xs')}${esc(tutorDe(c))}</small></div></div><div class="row"><span class="muted">Final</span>${gradePill(res.final)}</div></div>
             ${res.units.length ? `<div class="table-wrap"><table class="table">
                 <thead><tr><th>Unidad</th><th class="num">Peso</th><th style="width:30%">Progreso</th><th class="center">Promedio</th></tr></thead>
                 <tbody>${res.units.map(un => `<tr><td><strong>U${un.numero}</strong> · ${esc(un.nombre)}</td><td class="num">${fmtPeso(un.peso)}</td>
@@ -1910,6 +1934,17 @@ const CHANGES = {
         render();
     },
     'audit-est': (el) => { state.auditEst = el.value; render(); },
+    'enroll-check': (el) => {
+        // Al llegar al cupo se bloquean los demás; al liberar un lugar se vuelven a habilitar.
+        const form = el.form;
+        const marcados = $$('input[name="est"]:checked', form).length;
+        $$('input[name="est"]', form).forEach(i => { if (!i.checked) i.disabled = marcados >= CONFIG.MAX_ALUMNOS_CURSO; });
+        const badge = form.querySelector('[data-cupo]');
+        if (badge) {
+            badge.textContent = `${cupoTexto(marcados)} cupos usados`;
+            badge.className = `badge ${marcados >= CONFIG.MAX_ALUMNOS_CURSO ? 'badge-warn' : 'badge-brand'}`;
+        }
+    },
     'user-form-rol': (el) => {
         const fs = el.form.querySelector('[data-role-only="PADRE"]');
         if (fs) fs.hidden = el.value !== ROLES.PADRE;
