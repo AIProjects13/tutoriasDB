@@ -4,7 +4,7 @@
    1. Configuración          6. Navegación / router
    2. Estado e índices       7. Vistas del TUTOR
    3. Utilidades             8. Vistas del ESTUDIANTE
-   4. API (Apps Script)      9. Vistas del PADRE y compartidas
+   4. API (backend)          9. Vistas del PADRE y compartidas
    5. Motor de notas        10. UI (modales, toasts), acciones y arranque
    ========================================================================== */
 
@@ -269,27 +269,38 @@ class ApiError extends Error {
     constructor(code, message) { super(message); this.code = code; }
 }
 
+// Mensajes para el usuario: nunca mencionan tecnologías. El detalle técnico va a la consola.
+const MSG = {
+    CONFIG: 'La plataforma no está disponible en este momento. Contacta al administrador.',
+    NETWORK: 'No hay conexión. Revisa tu internet e intenta de nuevo.',
+    BAD_RESPONSE: 'No pudimos confirmar si la operación se completó. Revisa la información actualizada antes de intentarlo de nuevo.',
+};
+
 async function api(action, payload = {}, { forceRefresh = false } = {}) {
     if (CONFIG.API_URL.includes('REEMPLAZA')) {
-        throw new ApiError('CONFIG', 'Falta configurar API_URL en app.js con la URL /exec de Apps Script.');
+        console.error('[TutoríasGT] CONFIG.API_URL no está configurada en app.js');
+        throw new ApiError('CONFIG', MSG.CONFIG);
     }
     const idToken = await auth.currentUser?.getIdToken(forceRefresh);
-    if (!idToken) throw new ApiError('UNAUTHENTICATED', 'Sesión no iniciada.');
+    if (!idToken) throw new ApiError('UNAUTHENTICATED', 'Tu sesión no está iniciada.');
 
     let res;
     try {
-        // text/plain evita el preflight CORS que Apps Script no soporta.
+        // text/plain evita el preflight CORS (el backend no lo soporta).
         res = await fetch(CONFIG.API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action, payload, idToken }),
         });
-    } catch {
-        throw new ApiError('NETWORK', 'No hay conexión con el servidor. Revisa tu internet.');
+    } catch (e) {
+        console.error(`[TutoríasGT] Falló la conexión (${action}):`, e);
+        throw new ApiError('NETWORK', MSG.NETWORK);
     }
+    const text = await res.text().catch(() => '');
     let json;
-    try { json = await res.json(); } catch {
-        throw new ApiError('BAD_RESPONSE', 'Respuesta inesperada del servidor. ¿La URL de Apps Script es correcta y está desplegada?');
+    try { json = JSON.parse(text); } catch {
+        console.error(`[TutoríasGT] Respuesta no válida del backend (${action}) · HTTP ${res.status} ${res.url}\n`, text.slice(0, 1500));
+        throw new ApiError('BAD_RESPONSE', MSG.BAD_RESPONSE);
     }
     if (!json.ok) {
         const err = new ApiError(json.error?.code || 'ERROR', json.error?.message || 'Error desconocido.');
@@ -333,6 +344,7 @@ async function mutate(action, payload, successMsg) {
         return r ?? true;
     } catch (e) {
         toast(e.message, 'error');
+        if (e.code === 'BAD_RESPONSE') refresh().catch(() => {});   // muestra si el cambio sí se guardó
         return null;
     }
 }
@@ -727,7 +739,7 @@ async function openUserModal(u = null) {
             }
             const r = await withBusy(() => api('saveUser', payload));
             if (r?.sinCambios) toast('No había cambios que guardar.');
-            else if (r?.cuentaExistente) toast('El correo ya tenía cuenta en Firebase: se vinculará en su primer inicio de sesión con su contraseña actual.', 'info', 8000);
+            else if (r?.cuentaExistente) toast('Este correo ya tenía una cuenta: la persona entrará con la contraseña que ya usa.', 'info', 8000);
             else toast(u ? 'Usuario actualizado.' : 'Cuenta creada. Comparte el correo y la contraseña temporal.', 'success', 6000);
             await refresh();
         },
@@ -1599,6 +1611,13 @@ function openModal({ title, body, submitLabel = 'Guardar', danger = false, wide 
                 result = (await onSubmit?.(new FormData(form), form)) ?? true;
                 dlg.close();
             } catch (ex) {
+                if (ex.code === 'BAD_RESPONSE') {
+                    // Puede que sí se haya guardado: se cierra y se recargan los datos para verlo.
+                    dlg.close();
+                    toast(ex.message, 'info', 9000);
+                    refresh().catch(() => {});
+                    return;
+                }
                 err.textContent = ex.message; err.hidden = false;
             } finally {
                 btn.disabled = false; btn.classList.remove('is-loading');
@@ -1682,7 +1701,7 @@ async function downloadEntrega(btn) {
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 10000);
-        if (!f.integro) toast('⚠️ El archivo no coincide con la huella registrada al entregarse. Pudo ser alterado en Drive.', 'error', 10000);
+        if (!f.integro) toast('⚠️ El archivo no coincide con el que se entregó originalmente. Pudo ser modificado después de la entrega.', 'error', 10000);
     } catch (e) {
         toast(e.message, 'error');
     } finally {
@@ -1928,9 +1947,9 @@ const SUBMITS = {
                 fail('Por seguridad, vuelve a iniciar sesión con la contraseña temporal y cámbiala de inmediato.');
                 setTimeout(() => signOut(auth), 3000);
             } else if (e.code === 'auth/weak-password') {
-                fail('Firebase considera esa contraseña demasiado débil. Elige otra.');
+                fail('Esa contraseña es demasiado débil. Elige otra.');
             } else {
-                fail(e.message || authErrorMsg(e));
+                fail(String(e.code || '').startsWith('auth/') ? authErrorMsg(e) : (e.message || authErrorMsg(e)));
             }
         } finally {
             btn.classList.remove('is-loading'); btn.disabled = false;
@@ -1994,7 +2013,8 @@ function authErrorMsg(e) {
         'auth/network-request-failed': 'Sin conexión. Revisa tu internet.',
         'auth/user-disabled': 'Esta cuenta está deshabilitada.',
     };
-    return map[e?.code] || e?.message || 'No se pudo completar la operación.';
+    if (!map[e?.code]) console.error('[TutoríasGT] Error de autenticación:', e);
+    return map[e?.code] || 'No se pudo completar la operación. Intenta de nuevo.';
 }
 
 function showLoginError(msg) {
@@ -2028,7 +2048,7 @@ async function bootSession(forceRefresh = false) {
         render();
     } catch (e) {
         if (e.code === 'NOT_REGISTERED') {
-            showDenied('Cuenta sin acceso', `${auth.currentUser?.email || ''} no está registrado en TutoríasGT. Pide a tu tutor que cree tu acceso.`);
+            showDenied('Cuenta sin acceso', `${auth.currentUser?.email || ''} no está registrado en TutoríasGT. Solicita tu acceso a la administración.`);
         } else if (e.code === 'EMAIL_NOT_VERIFIED') {
             showDenied('Verifica tu correo', `Para activar la cuenta de tutor, verifica ${auth.currentUser?.email}. Luego presiona "Ya verifiqué".`,
                 `<button class="btn btn-primary btn-block" data-action="resend-verification">Enviar correo de verificación</button>
