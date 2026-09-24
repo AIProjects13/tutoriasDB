@@ -521,6 +521,7 @@ function renderChrome() {
 }
 
 function showScreen(name) {
+    hideAllPasswords();
     for (const s of ['loading', 'login', 'denied', 'password', 'app']) $(`#screen-${s}`).hidden = s !== name;
 }
 
@@ -1763,6 +1764,7 @@ async function imageToBase64(file) {
 const findUser = id => idx.users.get(id);
 
 const ACTIONS = {
+    'toggle-password': (btn) => setPasswordVisible(btn, btn.getAttribute('aria-pressed') !== 'true'),
     'open-sidebar': () => $('#screen-app').classList.add('sidebar-open'),
     'close-sidebar': () => $('#screen-app').classList.remove('sidebar-open'),
     'logout': async () => {
@@ -1906,6 +1908,7 @@ const SUBMITS = {
         const email = form.email.value.trim();
         const password = form.password.value;
         if (!form.checkValidity()) return form.reportValidity();
+        hideAllPasswords();
         const btn = form.querySelector('[type=submit]');
         btn.classList.add('is-loading'); btn.disabled = true;
         showLoginError('');
@@ -1956,6 +1959,31 @@ const SUBMITS = {
         }
     },
 };
+
+/** Muestra u oculta la contraseña del campo asociado al botón 👁️. */
+function setPasswordVisible(btn, visible) {
+    const input = btn.closest('.password-field')?.querySelector('input');
+    if (!input) return;
+    input.type = visible ? 'text' : 'password';
+    btn.textContent = visible ? '🙈' : '👁️';
+    btn.setAttribute('aria-pressed', String(visible));
+    const label = visible ? 'Ocultar contraseña' : 'Mostrar contraseña';
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+    input.focus({ preventScroll: true });
+}
+
+/** Vuelve a ocultar todas las contraseñas (al enviar o cambiar de pantalla). */
+function hideAllPasswords() {
+    $$('.password-toggle[aria-pressed="true"]').forEach(btn => {
+        const input = btn.closest('.password-field')?.querySelector('input');
+        if (input) input.type = 'password';
+        btn.textContent = '👁️';
+        btn.setAttribute('aria-pressed', 'false');
+        btn.setAttribute('aria-label', 'Mostrar contraseña');
+        btn.title = 'Mostrar contraseña';
+    });
+}
 
 function passwordProblem(pw) {
     if (pw.length < CONFIG.MIN_CLAVE) return `Debe tener al menos ${CONFIG.MIN_CLAVE} caracteres.`;

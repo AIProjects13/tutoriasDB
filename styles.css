@@ -260,6 +260,18 @@ textarea { min-height: 96px; resize: vertical; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-100); }
 input:disabled, select:disabled { background: var(--surface-2); color: var(--muted); }
 input[type="checkbox"], input[type="radio"] { width: 18px; height: 18px; min-height: 0; padding: 0; accent-color: var(--brand); }
+/* Campo de contraseña con botón mostrar/ocultar */
+.password-field { position: relative; display: block; }
+.password-field input { padding-right: 48px; }
+.password-toggle {
+    position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+    width: 40px; height: 36px; border: 0; border-radius: 8px; background: none;
+    display: grid; place-items: center; cursor: pointer; font-size: 17px; line-height: 1;
+    opacity: .55; transition: opacity 160ms, background-color 160ms;
+}
+.password-toggle:hover, .password-toggle:focus-visible { opacity: 1; background: var(--surface-2); }
+.password-toggle[aria-pressed="true"] { opacity: 1; }
+
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
 .form-grid .span-all { grid-column: 1 / -1; }
 .form-error { color: var(--risk); background: var(--risk-bg); border-radius: 8px; padding: 10px 12px; font-size: 14px; }

@@ -60,7 +60,10 @@
                 </label>
                 <label class="field">
                     <span>Contraseña</span>
-                    <input type="password" name="password" autocomplete="current-password" required minlength="6">
+                    <span class="password-field">
+                        <input type="password" name="password" autocomplete="current-password" required minlength="6">
+                        <button type="button" class="password-toggle" data-action="toggle-password" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña">👁️</button>
+                    </span>
                 </label>
                 <p class="form-error" role="alert" hidden></p>
                 <button type="submit" class="btn btn-primary btn-block">Entrar</button>
@@ -97,12 +100,18 @@
             <form id="password-form" data-submit="change-password" class="stack" novalidate>
                 <label class="field">
                     <span>Nueva contraseña</span>
-                    <input type="password" name="p1" autocomplete="new-password" required minlength="10">
+                    <span class="password-field">
+                        <input type="password" name="p1" autocomplete="new-password" required minlength="10">
+                        <button type="button" class="password-toggle" data-action="toggle-password" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña">👁️</button>
+                    </span>
                     <small class="field-hint">Mínimo 10 caracteres, con letras y números.</small>
                 </label>
                 <label class="field">
                     <span>Repite la contraseña</span>
-                    <input type="password" name="p2" autocomplete="new-password" required minlength="10">
+                    <span class="password-field">
+                        <input type="password" name="p2" autocomplete="new-password" required minlength="10">
+                        <button type="button" class="password-toggle" data-action="toggle-password" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña">👁️</button>
+                    </span>
                 </label>
                 <p class="form-error" role="alert" hidden></p>
                 <button type="submit" class="btn btn-primary btn-block">Guardar y entrar</button>
